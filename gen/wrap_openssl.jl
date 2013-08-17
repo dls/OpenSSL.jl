@@ -20,10 +20,13 @@ clang_includes = map(x->joinpath(ENV["JULIAHOME"], x), [
 clang_extraargs = ["-D", "__STDC_LIMIT_MACROS", "-D", "__STDC_CONSTANT_MACROS"]
 
 header_path = "/Users/dls/jl/openssl-1.0.1e/include/openssl/"
-headers_to_wrap = map(x -> joinpath(header_path, x), split(readall(`ls $header_path` |> `sort`)))
-#@show headers_to_wrap
+#headers_to_wrap = map(x -> joinpath(header_path, x), split(readall(`ls $header_path` |> `sort`)))
+headers_to_wrap = map(x -> joinpath(header_path, x), ["aes.h", "rand.h"])
+@show headers_to_wrap
 
-wc = wrap_c.init(".", "openssl_common.jl", clang_includes, clang_extraargs, (th, h) -> contains(headers_to_wrap, h), h -> "libopenssl", h -> last(split(h, "/")) * ".jl")
+#exit()
+
+wc = wrap_c.init(".", "openssl_common.jl", clang_includes, clang_extraargs, (th, h) -> contains(headers_to_wrap, h), h -> "libcrypto", h -> last(split(h, "/")) * ".jl")
 wc.options.wrap_structs = true
 
 wrap_c.wrap_c_headers(wc, map(ascii, headers_to_wrap))
