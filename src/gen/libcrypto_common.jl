@@ -16,6 +16,12 @@ type aes_key_st
   rounds::Int32
 end
 @ctypedef AES_KEY aes_key_st
+@ctypedef DES_cblock Void
+@ctypedef const_DES_cblock Void
+type DES_ks
+  ks::Void
+end
+@ctypedef DES_key_schedule DES_ks
 type MD5state_st
   A::Uint32
   B::Uint32

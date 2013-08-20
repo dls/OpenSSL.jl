@@ -21,7 +21,7 @@ clang_extraargs = ["-D", "__STDC_LIMIT_MACROS", "-D", "__STDC_CONSTANT_MACROS"]
 
 header_path = "/Users/dls/jl/openssl-1.0.1e/include/openssl/"
 #headers_to_wrap = map(x -> joinpath(header_path, x), split(readall(`ls $header_path` |> `sort`)))
-headers_to_wrap = map(x -> joinpath(header_path, x), ["aes.h", "md5.h", "md4.h", "mdc2.h", "sha.h", "rand.h"])
+headers_to_wrap = map(x -> joinpath(header_path, x), ["aes.h", "des.h", "md5.h", "md4.h", "mdc2.h", "sha.h", "rand.h"])
 @show headers_to_wrap
 
 #exit()
