@@ -27,6 +27,25 @@ type MD5state_st
   num::Uint32
 end
 @ctypedef MD5_CTX MD5state_st
+type MD4state_st
+  A::Uint32
+  B::Uint32
+  C::Uint32
+  D::Uint32
+  Nl::Uint32
+  Nh::Uint32
+  data::Void
+  num::Uint32
+end
+@ctypedef MD4_CTX MD4state_st
+type mdc2_ctx_st
+  num::Uint32
+  data::Void
+  h::DES_cblock
+  hh::DES_cblock
+  pad_type::Int32
+end
+@ctypedef MDC2_CTX mdc2_ctx_st
 type SHAstate_st
   h0::Uint32
   h1::Uint32
@@ -57,27 +76,6 @@ type SHA512state_st
   md_len::Uint32
 end
 @ctypedef SHA512_CTX SHA512state_st
-type MD4state_st
-  A::Uint32
-  B::Uint32
-  C::Uint32
-  D::Uint32
-  Nl::Uint32
-  Nh::Uint32
-  data::Void
-  num::Uint32
-end
-@ctypedef MD4_CTX MD4state_st
-type rc2_key_st
-  data::Void
-end
-@ctypedef RC2_KEY rc2_key_st
-type rc4_key_st
-  x::Uint8
-  y::Uint8
-  data::Void
-end
-@ctypedef RC4_KEY rc4_key_st
 type rand_meth_st
   seed::Ptr{Void}
   bytes::Ptr{Void}
