@@ -21,12 +21,12 @@ clang_extraargs = ["-D", "__STDC_LIMIT_MACROS", "-D", "__STDC_CONSTANT_MACROS"]
 
 header_path = "/Users/dls/jl/openssl-1.0.1e/include/openssl/"
 #headers_to_wrap = map(x -> joinpath(header_path, x), split(readall(`ls $header_path` |> `sort`)))
-headers_to_wrap = map(x -> joinpath(header_path, x), ["aes.h", "rand.h"])
+headers_to_wrap = map(x -> joinpath(header_path, x), ["aes.h", "md5.h", "sha.h", "md4.h", "rc2.h", "rc4.h", "rand.h"])
 @show headers_to_wrap
 
 #exit()
 
-wc = wrap_c.init(".", "openssl_common.jl", clang_includes, clang_extraargs, (th, h) -> contains(headers_to_wrap, h), h -> "libcrypto", h -> last(split(h, "/")) * ".jl")
+wc = wrap_c.init(".", "libcrypto_common.jl", clang_includes, clang_extraargs, (th, h) -> contains(headers_to_wrap, h), h -> "libcrypto", h -> last(split(h, "/")) * ".jl")
 wc.options.wrap_structs = true
 
 wrap_c.wrap_c_headers(wc, map(ascii, headers_to_wrap))
