@@ -3,7 +3,7 @@ module Hash
 
 import Base
 
-export md4, md5, sha1, sha224, sha256, sha348, sha512, hex
+export md4, md5, sha1, sha224, sha256, sha384, sha512, hex
 
 function hex(arr :: Array{Uint8})
     join(map(x -> length(x) == 1 ? "0" * x : x, map(Base.hex, arr)))
@@ -60,7 +60,7 @@ include("gen/sha.h.jl")
 @make_hasher(sha1, "SHA1", 20)
 @make_hasher(sha224, "SHA224", 28)
 @make_hasher(sha256, "SHA256", 32)
-@make_hasher(sha348, "SHA384", 48)
+@make_hasher(sha384, "SHA384", 48)
 @make_hasher(sha512, "SHA512", 64)
 
 end # module Hash
