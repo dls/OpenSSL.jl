@@ -1,17 +1,5 @@
 include("../src/Hash.jl")
-
-macro assert_equal(a, b)
-    quote
-        aval = $a
-        bval = $b
-        if aval != bval
-            println("Failure: (", aval, " == ", bval, ")")
-            println("Failure: (", typeof(aval), " == ", typeof(bval), ")")
-        else
-            print(".")
-        end
-    end
-end
+include("testing.jl")
 
 fname = tempname()
 test_strings = ["foo", "foobar", "baz", "this is a test", ""]
@@ -37,7 +25,6 @@ function check_hash(algorithm, fn)
 end
 
 
-println("checking passed strings:")
 check_hash("md4", Hash.md4)
 check_hash("md5", Hash.md5)
 check_hash("mdc2", Hash.mdc2)
@@ -46,3 +33,4 @@ check_hash("sha224", Hash.sha224)
 check_hash("sha256", Hash.sha256)
 check_hash("sha384", Hash.sha384)
 check_hash("sha512", Hash.sha512)
+println()

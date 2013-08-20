@@ -1,4 +1,3 @@
-# nicer functions for accessing the hashes from julia
 module Hash
 
 import Base
