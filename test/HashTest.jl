@@ -23,9 +23,15 @@ function check_hash(algorithm, fn)
         close(f)
 
         command_line = strip(split(readall(`openssl $algorithm $fname`), " ")[2])
-        library = Hash.hex(fn(value))
+        library_with_passed_vaue = Hash.hex(fn(value))
 
-        @assert_equal(command_line, library)
+        @assert_equal(command_line, library_with_passed_vaue)
+
+        f = open(fname, "r")
+        library_from_file = Hash.hex(fn(f))
+        close(f)
+
+        @assert_equal(command_line, library_from_file)
     end
     println()
 end

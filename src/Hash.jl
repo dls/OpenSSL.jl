@@ -11,15 +11,17 @@ end
 
 include("gen/libcrypto_common.jl")
 
-macro make_hasher(our_name, libcrypto_name, len)
+macro make_hasher(our_name, libcrypto_name, hash_length)
     init = symbol(libcrypto_name * "_Init")
     update = symbol(libcrypto_name * "_Update")
     final = symbol(libcrypto_name * "_Final")
     libcrypto_name = symbol(libcrypto_name)
 
+    context_size = 100
+
     quote
         function $(esc(our_name))(a :: Array{Uint8})
-            hash = zeros(Uint8, $len)
+            hash = zeros(Uint8, $hash_length)
             $libcrypto_name(a, length(a), hash)
             hash
         end
@@ -27,7 +29,7 @@ macro make_hasher(our_name, libcrypto_name, len)
         $(esc(our_name))(a :: String) = $(esc(our_name))(convert(Array{Uint8}, a))
 
         function $(esc(our_name))(a :: IO)
-            context = zeros(Uint8, 16)
+            context = zeros(Uint8, $context_size)
             $init(context)
 
             buffer = Array(Uint8, 65536)
@@ -38,7 +40,7 @@ macro make_hasher(our_name, libcrypto_name, len)
             end
             $update(context, buffer, read)
 
-            hash = Array(Uint8, $len)
+            hash = Array(Uint8, $hash_length)
             $(esc(final))(hash, context)
             hash
         end
