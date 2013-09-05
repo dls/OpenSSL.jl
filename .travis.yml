@@ -16,3 +16,4 @@ script:
 #    - mkdir -p ~/.julia/Crypto.jl/
 #    - cp -R ./* ~/.julia/Crypto.jl/
     - julia test/run_tests.jl
+# adding line so I can push...
