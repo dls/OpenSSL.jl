@@ -4,7 +4,7 @@ module Padding
 include("Rand.jl")
 
 # all use of these functions outside of this file are via:
-function pad!(padding, block_size :: Int, data :: Array{Uint8})
+function pad!(padding, block_size, data :: Array{Uint8})
     n = block_size - (length(data) % block_size)
     append!(data, make_padding(padding, n == 0 ? block_size : n))
 end
@@ -16,10 +16,22 @@ end
 # which as you can see, requires everying padding sceme to implement both
 # make_padding and padding_length
 
+immutable NoPadding
+end
+
+function make_padding(::Type{NoPadding}, len)
+    []
+end
+
+function padding_length(::Type{NoPadding}, data :: Array{Uint8})
+    0
+end
+
+
 immutable BytePadding
 end
 
-function make_padding(::Type{BytePadding}, len :: Int)
+function make_padding(::Type{BytePadding}, len)
     out = zeros(Uint8, len)
     out[1] = 1
     out
@@ -40,7 +52,7 @@ end
 immutable AnsiX923
 end
 
-function make_padding(::Type{AnsiX923}, len :: Int)
+function make_padding(::Type{AnsiX923}, len)
     out = zeros(Uint8, len)
     out[end] = len
     out
@@ -54,7 +66,7 @@ end
 immutable Iso10126
 end
 
-function make_padding(::Type{Iso10126}, len :: Int)
+function make_padding(::Type{Iso10126}, len)
     out = Rand.cryptographic_rand(len)
     out[end] = len
     out
@@ -68,7 +80,7 @@ end
 immutable Pkcs7
 end
 
-function make_padding(::Type{Pkcs7}, len :: Int)
+function make_padding(::Type{Pkcs7}, len)
     [len for i=1:len]
 end
 
@@ -80,7 +92,7 @@ end
 immutable IsoIec7816_4
 end
 
-function make_padding(::Type{IsoIec7816_4}, len :: Int)
+function make_padding(::Type{IsoIec7816_4}, len)
     out = zeros(Uint8, len)
     out[1] = 0x08
     out
@@ -98,6 +110,6 @@ function padding_length(::Type{IsoIec7816_4}, data :: Array{Uint8})
 end
 
 
-export pad!, unpad!, BytePadding, AnsiX923, Iso10126, Pkcs7, IsoIec7816_4
+export pad!, unpad!, NoPadding, BytePadding, AnsiX923, Iso10126, Pkcs7, IsoIec7816_4
 
 end # module Padding
