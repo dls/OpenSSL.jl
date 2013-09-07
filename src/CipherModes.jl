@@ -131,66 +131,76 @@ ctr_decrypt(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt(key, nonce, i
 
 
 # --- cfb mode
-function cfb_encrypt!(padding, key, data :: Array{Uint8})
-    iv = cryptographic_rand(block_size(key))
-    tmp = copy(iv)
+function cfb_encrypt!(key, in :: Array{Uint8})
+    in[1:block_size(key)] = cryptographic_rand(block_size(key))
 
-    for block = BlockIterator(in, block_size(key), padding)
+    tmp = in[1:block_size(key)]
+    for idx = 1:int64(floor(length(in) / block_size(key)))
         encrypt!(key, tmp)
-        block $= tmp
-        tmp[1:block_size(key)] = block
-    end
-    prepend!(in, iv)
-end
-cfb_encrypt(padding, key, data) = cfb_encrypt!(padding, key, copy(data))
-
-function cfb_decrypt!(key, in :: Array{Uint8})
-    iv = data[1:block_size(key)]
-    for i=1:block_size(key)
-        shift!(data)
-    end
-
-    previous = iv
-    for block = BlockIterator(in, block_size(key), padding)
-        decrypt!(key, previous)
-        block $= previous
-        previous[1:block_size(key)] = block
+        xor!(slice(in, ((idx * block_size(key)) + 1) : min(length(in), ((idx + 1) * block_size(key)))), tmp)
+        tmp = slice(in, ((idx * block_size(key)) + 1) : min(length(in), ((idx + 1) * block_size(key))))
     end
     in
 end
-cfb_decrypt(padding, key, data) = cfb_decrypt!(padding, key, copy(data))
+function cfb_encrypt(key, in)
+    out = zeros(Uint8, length(in) + block_size(key))
+    cfb_encrypt!(key, out)
+end
+
+function cfb_decrypt!(key, in :: Array{Uint8})
+    iv = in[1:block_size(key)]
+    for i=1:block_size(key)
+        shift!(in)
+    end
+
+    tmp = iv
+    for idx = 0:int64(floor(length(in) / block_size(key)))
+        encrypt!(key, tmp)
+        tmp = copy(slice(in, ((idx * block_size(key)) + 1) : min(length(in), ((idx + 1) * block_size(key)))))
+        xor!(slice(in, ((idx * block_size(key)) + 1) : min(length(in), ((idx + 1) * block_size(key)))), tmp)
+    end
+    in
+end
+cfb_decrypt(key, in) = cfb_decrypt!(key, copy(in))
 
 
 # --- ofb mode
-function ofb_encrypt!(padding, key, data :: Array{Uint8})
-    iv = cryptographic_rand(block_size(key))
-    tmp = copy(iv)
+function ofb_encrypt!(key, in :: Array{Uint8})
+    in[1:block_size(key)] = cryptographic_rand(block_size(key))
 
-    for block = BlockIterator(in, block_size(key), padding)
+    tmp = in[1:block_size(key)]
+    for idx = 1:int64(floor(length(in) / block_size(key)))
         encrypt!(key, tmp)
-        block $= tmp
-    end
-    prepend!(in, iv)
-end
-ofb_encrypt(padding, key, data) = ofb_encrypt!(padding, key, copy(data))
-
-function ofb_decrypt!(key, in :: Array{Uint8})
-    previous = data[1:block_size(key)]
-    for i=1:block_size(key)
-        shift!(data)
-    end
-
-    for block = BlockIterator(in, block_size(key), padding)
-        decrypt!(key, previous)
-        block $= previous
+        xor!(slice(in, ((idx * block_size(key)) + 1) : min(length(in), ((idx + 1) * block_size(key)))), tmp)
     end
     in
 end
-ofb_decrypt(padding, key, data) = ofb_decrypt!(padding, key, copy(data))
+function ofb_encrypt(key, in)
+    out = zeros(Uint8, length(in) + block_size(key))
+    ofb_encrypt!(key, out)
+end
+
+function ofb_decrypt!(key, in :: Array{Uint8})
+    iv = in[1:block_size(key)]
+    for i=1:block_size(key)
+        shift!(in)
+    end
+
+    tmp = iv
+    for idx = 0:int64(floor(length(in) / block_size(key)))
+        encrypt!(key, tmp)
+        xor!(slice(in, ((idx * block_size(key)) + 1) : min(length(in), ((idx + 1) * block_size(key)))), tmp)
+    end
+    in
+end
+ofb_decrypt(key, in) = ofb_decrypt!(key, copy(in))
+
 
 export ecb_encrypt!, ecb_encrypt, ecb_decrypt!, ecb_decrypt,
        cbc_encrypt, cbc_decrypt,
        pcbc_encrypt, pcbc_decrypt,
-       ctr_encrypt, ctr_decrypt
+       ctr_encrypt, ctr_decrypt,
+       cfb_encrypt, cfb_decrypt,
+       ofb_encrypt, ofb_decrypt
 
 end # module CipherModes
