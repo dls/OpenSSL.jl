@@ -36,18 +36,55 @@ function encrypt!(key :: AES, data, out)
     AES_encrypt(data, out, key.enc_key)
     out
 end
-encrypt!(key :: AES, data) = encrypt!(key, data, data)
-encrypt(key :: AES, data) = encrypt!(key, data, zeros(Uint8, 16))
+encrypt!(key, data) = encrypt!(key, data, data)
+encrypt(key, data) = encrypt!(key, data, zeros(Uint8, block_size(key)))
 
 function decrypt!(key :: AES, data, out)
     AES_decrypt(data, out, key.de_key)
     out
 end
-decrypt!(key :: AES, data) = decrypt!(key, data, data)
-decrypt(key :: AES, data) = decrypt!(key, data, zeros(Uint8, 16))
+decrypt!(key, data) = decrypt!(key, data, data)
+decrypt(key, data) = decrypt!(key, data, zeros(Uint8, block_size(key)))
+
+
+include("gen/des.h.jl")
+
+immutable DES
+    raw_key :: Array{Uint8}
+    lib_key :: Array{Uint8}
+
+    function DES(key :: Array{Uint8})
+        bits = length(key) * 8
+        @assert bits == 64 # but 8 of the bits are for parity
+
+        lib_key = zeros(Uint8, 200)
+        DES_set_key_unchecked(key, lib_key)
+
+        new(key, lib_key)
+    end
+end
+
+function generate_key(::Type{DES}, size)
+    key = zeros(Uint8, 8)
+    DES_random_key(key)
+    DES(key)
+end
+
+block_size(k :: DES) = 8
+
+function encrypt!(key :: DES, data, out)
+    DES_ecb_encrypt(data, out, key.lib_key, 1)
+    out
+end
+
+function decrypt!(key :: DES, data, out)
+    DES_ecb_encrypt(data, out, key.lib_key, 0)
+    out
+end
+
 
 export block_size, encrypt, encrypt!, decrypt, decrypt!,
     generate_key,
-    AES
+    AES, DES
 
 end # module BlockCiphers
