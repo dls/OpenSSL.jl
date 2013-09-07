@@ -115,7 +115,7 @@ function ctr_encrypt!(key, nonce :: Int64, in :: Array{Uint8})
     seed[9:16] = [uint8(nonce << (offset * 8)) for offset=0:7]
 
     tmp = zeros(Uint8, block_size(key))
-    for ctr = 1:int64(ceil(length(in) / block_size(key)))
+    for ctr = 0:int64(ceil(length(in) / block_size(key)))
         tmp[1:16] = seed
         tmp[1:8] = [uint8(ctr << (offset * 8)) for offset=0:7]
 
