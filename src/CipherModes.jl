@@ -4,6 +4,14 @@ import Base
 importall BlockCiphers
 importall Padding
 importall Iteration
+importall Rand
+
+function make_output_array(padding, extra, key, in)
+    out = zeros(Uint8, extra + padded_size(block_size(key), in))
+    out[(1 + extra):(length(in) + extra)] = in
+    pad!(padding, block_size(key), out, length(in) + extra)
+    out
+end
 
 # --- ecb mode
 # warning -- exposed for amusement purposes only, DO NOT USE
@@ -13,93 +21,92 @@ function ecb_encrypt!(padding, key, in :: Array{Uint8})
     end
     in
 end
-function ecb_encrypt(padding, key, in :: Array{Uint8})
-    out = zeros(Uint8, padded_size(block_size(key), in))
-    out[1:length(in)] = in
-    pad!(padding, block_size(key), out, length(in))
-
-    ecb_encrypt!(padding, key, out)
-end
+ecb_encrypt(padding, key, in :: Array{Uint8}) = ecb_encrypt!(padding, key, make_output_array(padding, 0, key, in))
 
 function ecb_decrypt!(padding, key, in :: Array{Uint8})
     for block = slicerator(in, block_size(key))
         decrypt!(key, block)
     end
+    unpad!(padding, in)
     in
 end
-function ecb_decrypt(padding, key, in :: Array{Uint8})
-    out = zeros(Uint8, padded_size(in, block_size(key)))
-    out[1:length(in)] = in
-    pad!(padding, out, length(in))
-    ecb_decrypt!(padding, key, copy(in))
-end
+ecb_decrypt(padding, key, in :: Array{Uint8}) = ecb_decrypt!(padding, key, copy(in))
 
+function xor!(a, b)
+    for i=1:length(a)
+        a[i] $= b[i]
+    end
+    a
+end
 
 # --- cbc mode
-function cbc_encrypt!(padding, key, data :: Array{Uint8})
-    tmp = zeros(Uint8, block_size(key))
-    previous = cryptographic_rand(block_size(key))
-    for block = BlockIterator(in, block_size(key), padding)
-        tmp[1:block_size(key)] = block
-        block[1:block_size(key)] = encrypt!(key, block $ previous)
-        previous = tmp
-    end
-    prepend!(in, iv)
-end
-cbc_encrypt(padding, key, data) = cbc_encrypt!(padding, key, copy(data))
+function cbc_encrypt!(padding, key, in :: Array{Uint8})
+    in[1:block_size(key)] = cryptographic_rand(block_size(key))
 
-function cbc_decrypt!(key, in :: Array{Uint8})
-    iv = data[1:block_size(key)]
-    for i=1:block_size(key)
-        shift!(data)
-    end
-
-    previous = iv
-    for block = BlockIterator(in, block_size(key), padding)
-        decrypt!(key, block)
-        block $= previous
-        previous[1:block_size(key)] = block
+    previous = in[1:block_size(key)]
+    for in_block = offset(1, slicerator(in, block_size(key)))
+        xor!(in_block, previous)
+        encrypt!(key, in_block)
+        previous[1:block_size(key)] = in_block[1:block_size(key)]
     end
     in
 end
-cbc_decrypt(padding, key, data) = cbc_decrypt!(padding, key, copy(data))
+cbc_encrypt(padding, key, in) = cbc_encrypt!(padding, key, make_output_array(padding, block_size(key), key, in))
+
+function cbc_decrypt!(padding, key, in :: Array{Uint8})
+    iv = in[1:block_size(key)]
+    for i=1:block_size(key)
+        shift!(in)
+    end
+
+    tmp = zeros(Uint8, block_size(key))
+    previous = iv
+    for block = slicerator(in, block_size(key))
+        tmp[1:block_size(key)] = block
+        decrypt!(key, block, block)
+        xor!(block, previous)
+        previous[1:block_size(key)] = tmp
+    end
+    unpad!(padding, in)
+    in
+end
+cbc_decrypt(padding, key, in) = cbc_decrypt!(padding, key, copy(in))
 
 
 # --- pcb mode
-function pcbc_encrypt!(padding, key, data :: Array{Uint8})
-    iv = cryptographic_rand(block_size(key))
-    tmp = copy(iv)
-    unencrypted = zeros(Uint8, block_size(key))
+function pcbc_encrypt!(padding, key, in :: Array{Uint8})
+    in[1:block_size(key)] = cryptographic_rand(block_size(key))
 
-    for block = BlockIterator(in, block_size(key), padding)
+    unencrypted = zeros(Uint8, block_size(key))
+    tmp = in[1:block_size(key)]
+    for block = offset(1, slicerator(in, block_size(key)))
         unencrypted[1:block_size(key)] = block
-        block $= tmp
+        xor!(block, tmp)
         encrypt!(key, block)
         tmp[1:block_size(key)] = unencrypted $ block
     end
-    prepend!(in, iv)
+    in
 end
-pcbc_encrypt(padding, key, data) = pcbc_encrypt!(padding, key, copy(data))
+pcbc_encrypt(padding, key, in) = pcbc_encrypt!(padding, key, make_output_array(padding, block_size(key), key, in))
 
-function pcbc_decrypt!(key, in :: Array{Uint8})
-    iv = data[1:block_size(key)]
+function pcbc_decrypt!(padding, key, in :: Array{Uint8})
+    iv = in[1:block_size(key)]
     for i=1:block_size(key)
-        shift!(data)
+        shift!(in)
     end
 
     encrypted = zeros(Uint8, block_size(key))
     tmp = copy(iv)
-    for block = BlockIterator(in, block_size(key), padding)
+    for block = slicerator(in, block_size(key))
         encrypted[1:block_size(key)] = block
         decrypt!(key, block)
-
-        block $= tmp
-
+        xor!(block, tmp)
         tmp[1:block_size(key)] = block $ encrypted
     end
+    unpad!(padding, in)
     in
 end
-pcbc_decrypt(padding, key, data) = pcbc_decrypt!(padding, key, copy(data))
+pcbc_decrypt(padding, key, in) = pcbc_decrypt!(padding, key, copy(in))
 
 
 # --- ctr mode
@@ -182,6 +189,8 @@ function ofb_decrypt!(key, in :: Array{Uint8})
 end
 ofb_decrypt(padding, key, data) = ofb_decrypt!(padding, key, copy(data))
 
-export ecb_encrypt!, ecb_encrypt, ecb_decrypt!, ecb_decrypt
+export ecb_encrypt!, ecb_encrypt, ecb_decrypt!, ecb_decrypt,
+       cbc_encrypt, cbc_decrypt,
+       pcbc_encrypt, pcbc_decrypt
 
 end # module CipherModes
