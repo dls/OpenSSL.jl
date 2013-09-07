@@ -8,6 +8,16 @@ function pad!(padding, block_size, data :: Array{Uint8})
     n = block_size - (length(data) % block_size)
     append!(data, make_padding(padding, n == 0 ? block_size : n))
 end
+function pad!(padding, block_size, data :: Array{Uint8}, length)
+    n = block_size - (length % block_size)
+    data[length+1:end] = make_padding(padding, n == 0 ? block_size : n)
+end
+
+function padded_size(block_size, data)
+    len = length(data)
+    n = block_size - (len % block_size)
+    len + n
+end
 
 function unpad!(padding, data :: Array{Uint8})
     resize!(data, length(data) - padding_length(padding, data))
@@ -110,6 +120,6 @@ function padding_length(::Type{IsoIec7816_4}, data :: Array{Uint8})
 end
 
 
-export pad!, unpad!, NoPadding, BytePadding, AnsiX923, Iso10126, Pkcs7, IsoIec7816_4
+export pad!, unpad!, padded_size, NoPadding, BytePadding, AnsiX923, Iso10126, Pkcs7, IsoIec7816_4
 
 end # module Padding

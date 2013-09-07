@@ -13,6 +13,9 @@ immutable AES
     de_key :: Array{Uint8}
 
     function AES(key :: Array{Uint8})
+        bits = length(key) * 8
+        @assert (bits == 128 || bits == 192 || bits == 256)
+
         enc_key = zeros(Uint8, 1000)
         AES_set_encrypt_key(key, length(key) * 8, enc_key)
 
@@ -25,19 +28,23 @@ end
 
 generate_key(::Type{AES}, size) = AES(Rand.create_block_cipher_key(uint64(size / 8)))
 
-block_size(k :: AES) = 16
+function block_size(k :: AES)
+    16
+end
 
-function encrypt!(key :: AES, data :: Array{Uint8}, out :: Array{Uint8})
+function encrypt!(key :: AES, data, out)
     AES_encrypt(data, out, key.enc_key)
     out
 end
-encrypt(key :: AES, data :: Array{Uint8}) = encrypt!(key, data, zeros(Uint8, 16))
+encrypt!(key :: AES, data) = encrypt!(key, data, data)
+encrypt(key :: AES, data) = encrypt!(key, data, zeros(Uint8, 16))
 
-function decrypt!(key :: AES, data :: Array{Uint8}, out :: Array{Uint8})
+function decrypt!(key :: AES, data, out)
     AES_decrypt(data, out, key.de_key)
     out
 end
-decrypt(key :: AES, data :: Array{Uint8}) = decrypt!(key, data, zeros(Uint8, 16))
+decrypt!(key :: AES, data) = decrypt!(key, data, data)
+decrypt(key :: AES, data) = decrypt!(key, data, zeros(Uint8, 16))
 
 export block_size, encrypt, encrypt!, decrypt, decrypt!,
     generate_key,
