@@ -110,25 +110,24 @@ pcbc_decrypt(padding, key, in) = pcbc_decrypt!(padding, key, copy(in))
 
 
 # --- ctr mode
-function ctr_encrypt!(key, nonce :: Uint64, data :: Array{Uint8})
-    seed = zeros(Uint8, 16)
-    seed[9:16] = [unit8(noonce << (offset * 8)) for offset=0:7]
+function ctr_encrypt!(key, nonce :: Int64, in :: Array{Uint8})
+    seed = zeros(Uint8, block_size(key))
+    seed[9:16] = [uint8(nonce << (offset * 8)) for offset=0:7]
 
-    tmp = copy(seed)
-    ctr = uint64(0)
-
-    for block = BlockIterator(in, block_size(key), padding)
+    tmp = zeros(Uint8, block_size(key))
+    for ctr = 1:int64(ceil(length(in) / block_size(key)))
         tmp[1:16] = seed
-        tmp[1:8] = [unit8(ctr << (offset * 8)) for offset=0:7]
+        tmp[1:8] = [uint8(ctr << (offset * 8)) for offset=0:7]
+
         encrypt!(key, tmp)
-        block $= tmp
+        xor!(slice(in, ((ctr * block_size(key)) + 1) : min(length(in), ((ctr + 1) * block_size(key)))), tmp)
     end
     in
 end
-ctr_encrypt(key, nonce :: Uint64, data :: Array{Uint8}) = ctr_encrypt!(key, nonce, copy(data))
+ctr_encrypt(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt!(key, nonce, copy(in))
 
-ctr_decrypt!(key, nonce :: Uint64, data :: Array{Uint8}) = ctr_encrypt!(key, nonce, data)
-ctr_decrypt(key, nonce :: Uint64, data :: Array{Uint8}) = ctr_encrypt(key, nonce, data)
+ctr_decrypt!(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt!(key, nonce, in)
+ctr_decrypt(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt(key, nonce, in)
 
 
 # --- cfb mode
@@ -191,6 +190,7 @@ ofb_decrypt(padding, key, data) = ofb_decrypt!(padding, key, copy(data))
 
 export ecb_encrypt!, ecb_encrypt, ecb_decrypt!, ecb_decrypt,
        cbc_encrypt, cbc_decrypt,
-       pcbc_encrypt, pcbc_decrypt
+       pcbc_encrypt, pcbc_decrypt,
+       ctr_encrypt, ctr_decrypt
 
 end # module CipherModes

@@ -29,4 +29,9 @@ out = pcbc_encrypt(Pkcs7, key, plain)
 @assert_not_equal(plain, out)
 @assert_equal(plain, pcbc_decrypt(Pkcs7, key, out))
 
+out = ctr_encrypt(key, 31337, plain)
+@assert_equal(20, length(out)) # no padding :D
+@assert_not_equal(plain, out)
+@assert_equal(plain, ctr_decrypt(key, 31337, out))
+
 println()
