@@ -110,7 +110,22 @@ pcbc_decrypt(padding, key, in) = pcbc_decrypt!(padding, key, copy(in))
 
 
 # --- ctr mode
-function ctr_encrypt!(key, nonce :: Int64, in :: Array{Uint8})
+function ctr_encrypt64!(key, nonce :: Int64, in :: Array{Uint8})
+    seed = zeros(Uint8, block_size(key))
+    seed[5:8] = [uint8(nonce << (offset * 8)) for offset=0:3]
+
+    tmp = zeros(Uint8, block_size(key))
+    for ctr = 0:int32(ceil(length(in) / block_size(key)))
+        tmp[1:8] = seed
+        tmp[1:4] = [uint8(ctr << (offset * 8)) for offset=0:3]
+
+        encrypt!(key, tmp)
+        xor!(slice(in, ((ctr * block_size(key)) + 1) : min(length(in), ((ctr + 1) * block_size(key)))), tmp)
+    end
+    in
+end
+
+function ctr_encrypt128!(key, nonce :: Int64, in :: Array{Uint8})
     seed = zeros(Uint8, block_size(key))
     seed[9:16] = [uint8(nonce << (offset * 8)) for offset=0:7]
 
@@ -124,6 +139,8 @@ function ctr_encrypt!(key, nonce :: Int64, in :: Array{Uint8})
     end
     in
 end
+ctr_encrypt!(key :: DES, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt64!(key, nonce, copy(in))
+ctr_encrypt!(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt128!(key, nonce, copy(in))
 ctr_encrypt(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt!(key, nonce, copy(in))
 
 ctr_decrypt!(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt!(key, nonce, in)
