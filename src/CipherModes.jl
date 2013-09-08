@@ -139,8 +139,13 @@ function ctr_encrypt128!(key, nonce :: Int64, in :: Array{Uint8})
     end
     in
 end
-ctr_encrypt!(key :: DES, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt64!(key, nonce, copy(in))
-ctr_encrypt!(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt128!(key, nonce, copy(in))
+function ctr_encrypt!(key, nonce :: Int64, in :: Array{Uint8})
+    if(block_size(key) == 8)
+        ctr_encrypt64!(key, nonce, in)
+    else
+        ctr_encrypt128!(key, nonce, in)
+    end
+end
 ctr_encrypt(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt!(key, nonce, copy(in))
 
 ctr_decrypt!(key, nonce :: Int64, in :: Array{Uint8}) = ctr_encrypt!(key, nonce, in)

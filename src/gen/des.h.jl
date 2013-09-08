@@ -8,7 +8,7 @@
 @c None DES_ncbc_encrypt (Ptr{Uint8}, Ptr{Uint8}, Int64, Ptr{DES_key_schedule}, Ptr{DES_cblock}, Int32) libcrypto
 @c None DES_xcbc_encrypt (Ptr{Uint8}, Ptr{Uint8}, Int64, Ptr{DES_key_schedule}, Ptr{DES_cblock}, Ptr{const_DES_cblock}, Ptr{const_DES_cblock}, Int32) libcrypto
 @c None DES_cfb_encrypt (Ptr{Uint8}, Ptr{Uint8}, Int32, Int64, Ptr{DES_key_schedule}, Ptr{DES_cblock}, Int32) libcrypto
-@c None DES_ecb_encrypt (Ptr{const_DES_cblock}, Ptr{DES_cblock}, Ptr{DES_key_schedule}, Int32) libcrypto
+@c None DES_ecb_encrypt (Ptr{Uint8}, Ptr{Uint8}, Ptr{DES_key_schedule}, Int32) libcrypto
 @c None DES_encrypt1 (Ptr{Uint32}, Ptr{DES_key_schedule}, Int32) libcrypto
 @c None DES_encrypt2 (Ptr{Uint32}, Ptr{DES_key_schedule}, Int32) libcrypto
 @c None DES_encrypt3 (Ptr{Uint32}, Ptr{DES_key_schedule}, Ptr{DES_key_schedule}, Ptr{DES_key_schedule}) libcrypto
@@ -39,4 +39,3 @@
 @c None DES_ofb64_encrypt (Ptr{Uint8}, Ptr{Uint8}, Int64, Ptr{DES_key_schedule}, Ptr{DES_cblock}, Ptr{Int32}) libcrypto
 @c Int32 DES_read_password (Ptr{DES_cblock}, Ptr{Uint8}, Int32) libcrypto
 @c Int32 DES_read_2passwords (Ptr{DES_cblock}, Ptr{DES_cblock}, Ptr{Uint8}, Int32) libcrypto
-
