@@ -17,17 +17,20 @@ clang_includes = map(x->joinpath(ENV["JULIAHOME"], x), [
   "deps/llvm-3.3/build_Release/include/",
   "deps/llvm-3.3/include",
 ])
+
 clang_extraargs = ["-D", "__STDC_LIMIT_MACROS", "-D", "__STDC_CONSTANT_MACROS"]
 
 header_path = "/Users/dls/jl/openssl-1.0.1e/include/openssl/"
-#headers_to_wrap = map(x -> joinpath(header_path, x), split(readall(`ls $header_path` |> `sort`)))
-headers_to_wrap = map(x -> joinpath(header_path, x), ["aes.h", "des.h", "md5.h", "md4.h", "mdc2.h", "sha.h", "rand.h"])
+headers_to_wrap = map(x -> joinpath(header_path, x), ["aes.h", "des.h", "md5.h", "md4.h", "mdc2.h", "sha.h", "rand.h", "ecdh.h", "ecdsa.h"])
 @show headers_to_wrap
 
-#exit()
+wc = wrap_c.init(CommonFile="libcrypto_common.jl",
+                 ClangArgs=clang_extraargs,
+                 ClangIncludes=clang_includes,
+                 header_wrapped= (th, h) -> contains(headers_to_wrap, h),
+                 header_library= h -> "libcrypto",
+                 header_outputfile= h -> joinpath("src", "gen", last(split(h, "/")) * ".jl"))
 
-wc = wrap_c.init(".", joinpath("src", "gen", "libcrypto_common.jl"), clang_includes, clang_extraargs, (th, h) -> contains(headers_to_wrap, h), h -> "libcrypto",
-                 h -> joinpath("src", "gen", last(split(h, "/")) * ".jl"))
 wc.options.wrap_structs = true
 
 wrap_c.wrap_c_headers(wc, map(ascii, headers_to_wrap))
